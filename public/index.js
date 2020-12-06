@@ -1,10 +1,17 @@
 //index.js
 $(document).ready(()=>{
     const socket = io.connect();
+
     //Keep track of the current user
     let currentUser;
     socket.emit('get online users');
+    socket.emit('user changed channel', "General");
 
+    //Users can change the channel by clicking on its name.
+    $(document).on('click', '.channel', (e)=>{
+        let newChannel = e.target.textContent;
+        socket.emit('user changed channel', newChannel);
+    });
 
     $('#create-user-btn').click((e)=>{
       e.preventDefault();
@@ -17,21 +24,7 @@ $(document).ready(()=>{
       }
     });
 
-    $('#send-chat-btn').click((e) => {
-      e.preventDefault();
-      // Get the client's channel
-      let channel = $('.channel-current').text();
-      let message = $('#chat-input').val();
-      if(message.length > 0){
-        socket.emit('new message', {
-          sender : currentUser,
-          message : message,
-          //Send the channel over to the server
-          channel : channel
-        });
-        $('#chat-input').val("");
-      }
-    });
+
 
     //socket listeners
     socket.on('new user', (username) => {
@@ -39,18 +32,18 @@ $(document).ready(()=>{
       $('.users-online').append(`<div class="user-online">${username}</div>`);
     })
 
-    //Output the new message
+
     socket.on('new message', (data) => {
-      //Only append the message if the user is currently in that channel
-      let currentChannel = $('.channel-current').text();
-      if(currentChannel == data.channel){
+        //Only append the message if the user is currently in that channel
+        let currentChannel = $('.channel-current').text();
+        if(currentChannel == data.channel){
         $('.message-container').append(`
-          <div class="message">
+            <div class="message">
             <p class="message-user">${data.sender}: </p>
             <p class="message-text">${data.message}</p>
-          </div>
+            </div>
         `);
-      }
+        }
     })
 
     socket.on('get online users', (onlineUsers) => {
@@ -101,4 +94,20 @@ $(document).ready(()=>{
         `);
         });
     })
+
+    $('#send-chat-btn').click((e) => {
+        e.preventDefault();
+        // Get the client's channel
+        let channel = $('.channel-current').text();
+        let message = $('#chat-input').val();
+        if(message.length > 0){
+          socket.emit('new message', {
+            sender : currentUser,
+            message : message,
+            //Send the channel over to the server
+            channel : channel
+          });
+          $('#chat-input').val("");
+        }
+    });
 })
